@@ -52,12 +52,15 @@ void vListInitialise( List_t * const pxList )
     /* The list structure contains a list item which is used to mark the
      * end of the list.  To initialise the list the list end is inserted
      * as the only list entry. */
+    /* 设置链表的索引，这里将会挂载链表项 */
+    /* 初始化时连接到链表尾部 */
     pxList->pxIndex = ( ListItem_t * ) &( pxList->xListEnd ); /*lint !e826 !e740 !e9087 The mini list structure is used as the list end to save RAM.  This is checked and valid. */
 
     listSET_FIRST_LIST_ITEM_INTEGRITY_CHECK_VALUE( &( pxList->xListEnd ) );
 
     /* The list end value is the highest possible value in the list to
      * ensure it remains at the end of the list. */
+    /*  */
     pxList->xListEnd.xItemValue = portMAX_DELAY;
 
     /* The list end next and previous pointers point to itself so we know
@@ -73,7 +76,7 @@ void vListInitialise( List_t * const pxList )
         listSET_SECOND_LIST_ITEM_INTEGRITY_CHECK_VALUE( &( pxList->xListEnd ) );
     }
     #endif
-
+    /* 开始时没有链表项 */
     pxList->uxNumberOfItems = ( UBaseType_t ) 0U;
 
     /* Write known values into the list if

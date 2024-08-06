@@ -182,14 +182,25 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
 {
     /* Simulate the stack frame as it would be created by a context switch
      * interrupt. */
+    /* 3oR 将栈顶指针 下移动 存入  */
     pxTopOfStack--;                                                      /* Offset added to account for the way the MCU uses the stack on entry/exit of interrupts. */
     *pxTopOfStack = portINITIAL_XPSR;                                    /* xPSR */
+
+    /* 3oR 将栈顶指针 下移动 存入PC值 这里存入的是 任务函数指针 */
     pxTopOfStack--;
     *pxTopOfStack = ( ( StackType_t ) pxCode ) & portSTART_ADDRESS_MASK; /* PC */
+    
+    /* 3oR 将栈顶指针 下移动 这里存入返回地址; 
+     * 任务函数是一个死循环程序 不应该有返回地址，因此这个宏被扩展为 退出错误 它指向了一个函数 里面同样是一个死循环 */
     pxTopOfStack--;
     *pxTopOfStack = ( StackType_t ) portTASK_RETURN_ADDRESS;             /* LR */
+
+    /* 3oR 将栈顶指针 下移动5个 模拟存入寄存器的值; */
     pxTopOfStack -= 5;                                                   /* R12, R3, R2 and R1. */
+    /* 设置最低的R0寄存器位置的值为函数的传入参数指针 */
     *pxTopOfStack = ( StackType_t ) pvParameters;                        /* R0 */
+    
+    /* 3oR 将栈顶指针 下移动8个 模拟存入其他寄存器的值; */
     pxTopOfStack -= 8;                                                   /* R11, R10, R9, R8, R7, R6, R5 and R4. */
 
     return pxTopOfStack;

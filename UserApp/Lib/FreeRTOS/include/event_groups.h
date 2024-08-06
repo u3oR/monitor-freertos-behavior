@@ -35,7 +35,7 @@
 
 /* FreeRTOS includes. */
 #include "timers.h"
-
+#include "FreeRTOS.h"
 /* *INDENT-OFF* */
 #ifdef __cplusplus
     extern "C" {

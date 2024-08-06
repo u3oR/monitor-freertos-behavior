@@ -223,6 +223,10 @@
     taskRECORD_READY_PRIORITY( ( pxTCB )->uxPriority );                                                \
     listINSERT_END( &( pxReadyTasksLists[ ( pxTCB )->uxPriority ] ), &( ( pxTCB )->xStateListItem ) ); \
     tracePOST_MOVED_TASK_TO_READY_STATE( pxTCB )
+/* 1 xxx */
+/* 2 记录下就绪链表中 任务的最大优先级数 */
+/* 3 将 xStateListItem 链表项挂载到对应优先级的就绪链表中 */
+/* 4 xxx */
 /*-----------------------------------------------------------*/
 
 /*
@@ -798,7 +802,9 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
             }
             #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
 
+            /* 3oR 初始化任务 */
             prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL );
+            /* 3oR 将任务添加到就绪列表里面 */
             prvAddNewTaskToReadyList( pxNewTCB );
             xReturn = pdPASS;
         }
@@ -840,6 +846,8 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
         uxPriority &= ~portPRIVILEGE_BIT;
     #endif /* portUSING_MPU_WRAPPERS == 1 */
 
+    /* 3oR 清空栈空间，这里使用一个已知的值(tskSTACK_FILL_BYTE)覆盖这篇内存 */
+
     /* Avoid dependency on memset() if it is not required. */
     #if ( tskSET_NEW_STACKS_TO_KNOWN_VALUE == 1 )
     {
@@ -848,13 +856,17 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
     }
     #endif /* tskSET_NEW_STACKS_TO_KNOWN_VALUE */
 
+
+    /* 3oR  栈自高向低地址增长 */
     /* Calculate the top of stack address.  This depends on whether the stack
      * grows from high memory to low (as per the 80x86) or vice versa.
      * portSTACK_GROWTH is used to make the result positive or negative as required
      * by the port. */
     #if ( portSTACK_GROWTH < 0 )
     {
+        /* 3oR 设置栈顶 */
         pxTopOfStack = &( pxNewTCB->pxStack[ ulStackDepth - ( uint32_t ) 1 ] );
+        /* 3oR 对齐栈顶指针 */
         pxTopOfStack = ( StackType_t * ) ( ( ( portPOINTER_SIZE_TYPE ) pxTopOfStack ) & ( ~( ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) ) ); /*lint !e923 !e9033 !e9078 MISRA exception.  Avoiding casts between pointers and integers is not practical.  Size differences accounted for using portPOINTER_SIZE_TYPE type.  Checked by assert(). */
 
         /* Check the alignment of the calculated top of stack is correct. */
@@ -881,6 +893,7 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
     }
     #endif /* portSTACK_GROWTH */
 
+    /* 3oR  将任务名称字符串 逐个字符 写入 pxNewTCB */
     /* Store the task name in the TCB. */
     if( pcName != NULL )
     {
@@ -910,6 +923,8 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
         mtCOVERAGE_TEST_MARKER();
     }
 
+    /*  3oR 设置优先级 */
+
     /* This is used as an array index so must ensure it's not too large. */
     configASSERT( uxPriority < configMAX_PRIORITIES );
 
@@ -928,16 +943,22 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
         pxNewTCB->uxBasePriority = uxPriority;
     }
     #endif /* configUSE_MUTEXES */
-
+    
+    /* 3oR 初始化链表项 设置 pxContainer 初始时 不属于任何链表 */
     vListInitialiseItem( &( pxNewTCB->xStateListItem ) );
     vListInitialiseItem( &( pxNewTCB->xEventListItem ) );
 
     /* Set the pxNewTCB as a link back from the ListItem_t.  This is so we can get
      * back to  the containing TCB from a generic item in a list. */
+    /* 3oR 设置 xStateListItem 链表项的拥有者 即 成员 xStateListItem->pvOwner 指向 pxNewTCB */
     listSET_LIST_ITEM_OWNER( &( pxNewTCB->xStateListItem ), pxNewTCB );
 
+
     /* Event lists are always in priority order. */
+    /* 3oR 设置 xEventListItem 链表项的 xItemValue 值，这里存储的是优先级；xEventListItem 链表将会按照这个值对成员排序*/
+    // TODO 看起来是对优先级进行了反转, 后面要对其补充
     listSET_LIST_ITEM_VALUE( &( pxNewTCB->xEventListItem ), ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+    /* 设置 xEventListItem 链表项的拥有者 */
     listSET_LIST_ITEM_OWNER( &( pxNewTCB->xEventListItem ), pxNewTCB );
 
     #if ( portUSING_MPU_WRAPPERS == 1 )
@@ -1004,6 +1025,7 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
         }
         #else /* portHAS_STACK_OVERFLOW_CHECKING */
         {
+            /* 这里传入的是 栈顶指针 任务函数指针 和 函数参数 */
             pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxTopOfStack, pxTaskCode, pvParameters );
         }
         #endif /* portHAS_STACK_OVERFLOW_CHECKING */
@@ -1029,19 +1051,23 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
      * updated. */
     taskENTER_CRITICAL();
     {
+        /* 3oR 一个全局变量，记录着当前的任务数量 */
         uxCurrentNumberOfTasks++;
-
+        
+        /* 系统第一次创建任务 pxCurrentTCB 为空 会进入该分支 */
         if( pxCurrentTCB == NULL )
         {
             /* There are no other tasks, or all the other tasks are in
              * the suspended state - make this the current task. */
             pxCurrentTCB = pxNewTCB;
-
+            
+            /* 再次验证 现在是 系统第一次创建任务 */
             if( uxCurrentNumberOfTasks == ( UBaseType_t ) 1 )
             {
                 /* This is the first task to be created so do the preliminary
                  * initialisation required.  We will not recover if this call
                  * fails, but we will report the failure. */
+                /* 初始化系统的调度链表 */
                 prvInitialiseTaskLists();
             }
             else
@@ -1049,6 +1075,8 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
                 mtCOVERAGE_TEST_MARKER();
             }
         }
+
+        /* 不是 系统第一次创建任务 pxCurrentTCB 不为空 会进入该分支 */
         else
         {
             /* If the scheduler is not already running, make this task the
@@ -1081,6 +1109,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
         #endif /* configUSE_TRACE_FACILITY */
         traceTASK_CREATE( pxNewTCB );
 
+        /* 将该任务添加到就绪链表中 */
         prvAddTaskToReadyList( pxNewTCB );
 
         portSETUP_TCB( pxNewTCB );
@@ -1985,6 +2014,7 @@ void vTaskStartScheduler( void )
     #else /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
     {
         /* The Idle task is being created using dynamically allocated RAM. */
+        /* 3oR 创建一个空闲任务 xIdleTaskHandle 会拿到这个空闲任务的TCB */
         xReturn = xTaskCreate( prvIdleTask,
                                configIDLE_TASK_NAME,
                                configMINIMAL_STACK_SIZE,
@@ -3658,6 +3688,7 @@ static void prvInitialiseTaskLists( void )
 {
     UBaseType_t uxPriority;
 
+    /* pxReadyTasksLists 是一个 任务就绪链表的数组，每个数组项内保存一个链表头 */
     for( uxPriority = ( UBaseType_t ) 0U; uxPriority < ( UBaseType_t ) configMAX_PRIORITIES; uxPriority++ )
     {
         vListInitialise( &( pxReadyTasksLists[ uxPriority ] ) );
