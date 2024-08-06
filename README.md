@@ -1,6 +1,6 @@
 # 在WSL上调试STM32
 
-<img src="README.images/pyocd.svg" style="zoom: 63%;"/>
+<img src="README.images/pyocd.png" style="zoom: 63%;"/>
 
 ## [0] 先决条件
 
