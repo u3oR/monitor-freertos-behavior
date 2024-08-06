@@ -1,5 +1,7 @@
 # 在WSL上调试STM32
 
+<img src="README.images/pyocd.svg" style="zoom: 63%;"/>
+
 ## [0] 先决条件
 
 0.1 > 一个人：良好的C语言能力；熟悉Makefile；基本的Linux能力；了解GDB
