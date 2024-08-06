@@ -203,21 +203,21 @@ clean:
 #######################################
 # 工具
 #######################################
-GDB = $(GCC_PATH)arm-none-eabi-gdb
 
 PYOCD_PATH = /opt/stm32/pyocd/bin
 
 PYOCD = $(PYOCD_PATH)/pyocd
 
-
 #######################################
 # 参数
 #######################################
-FIRMWARE = ${TARGET}.elf
+FIRMWARE    := ${TARGET}.elf
 
-DOWNLOAD_FLAGS = $(FIRMWARE) --target STM32F103RC
+LOAD_FLAGS  := 
+LOAD_FLAGS  += $(FIRMWARE) 
+LOAD_FLAGS  += --target STM32F103RC
 
-DEBUG_FLAGS :=
+DEBUG_FLAGS := 
 DEBUG_FLAGS += --elf $(FIRMWARE) 
 DEBUG_FLAGS += --port 65533 
 DEBUG_FLAGS += --target STM32F103RC 
@@ -227,13 +227,13 @@ DEBUG_FLAGS += -O rtos.enable=false
 # 命令
 #######################################
 load:
-	$(PYOCD) flash $(DOWNLOAD_FLAGS)
+	$(PYOCD) flash $(LOAD_FLAGS)
 
 server:
 	$(PYOCD) gdbserver $(DEBUG_FLAGS) 
 
 debug:
 	gdb-multiarch $(FIRMWARE) 
-# $(GDB) $(FIRMWARE) 
+
 # target remote localhost:65533
 
