@@ -111,9 +111,9 @@ typedef struct QueueDefinition /* The old naming convention is used to prevent b
     List_t xTasksWaitingToSend;             /*< List of tasks that are blocked waiting to post onto this queue.  Stored in priority order. */
     List_t xTasksWaitingToReceive;          /*< List of tasks that are blocked waiting to read from this queue.  Stored in priority order. */
 
-    volatile UBaseType_t uxMessagesWaiting; /*< The number of items currently in the queue. */
-    UBaseType_t uxLength;                   /*< The length of the queue defined as the number of items it will hold, not the number of bytes. */
-    UBaseType_t uxItemSize;                 /*< The size of each items that the queue will hold. */
+    volatile UBaseType_t uxMessagesWaiting; /*< The number of items currently in the queue. 队列中的成员个数 */
+    UBaseType_t uxLength;                   /*< The length of the queue defined as the number of items it will hold, not the number of bytes. 成员个数 */
+    UBaseType_t uxItemSize;                 /*< The size of each items that the queue will hold. 每个成员的Size */
 
     volatile int8_t cRxLock;                /*< Stores the number of items received from the queue (removed from the queue) while the queue was locked.  Set to queueUNLOCKED when the queue is not locked. */
     volatile int8_t cTxLock;                /*< Stores the number of items transmitted to the queue (added to the queue) while the queue was locked.  Set to queueUNLOCKED when the queue is not locked. */
@@ -214,7 +214,7 @@ static void prvCopyDataFromQueue( Queue_t * const pxQueue,
 
 /*
  * Called after a Queue_t structure has been allocated either statically or
- * dynamically to fill in the structure's members.
+ * dynamically to fill in the structure's members. 初始化一个新队列并初始化队列信息
  */
 static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength,
                                    const UBaseType_t uxItemSize,
@@ -490,7 +490,7 @@ BaseType_t xQueueGenericReset( QueueHandle_t xQueue,
 
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 /*-----------------------------------------------------------*/
-
+/* 初始化一个新队列 */
 static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength,
                                    const UBaseType_t uxItemSize,
                                    uint8_t * pucQueueStorage,
@@ -517,8 +517,8 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength,
 
     /* Initialise the queue members as described where the queue type is
      * defined. */
-    pxNewQueue->uxLength = uxQueueLength;
-    pxNewQueue->uxItemSize = uxItemSize;
+    pxNewQueue->uxLength = uxQueueLength; /* 设置队列中成员的个数 */
+    pxNewQueue->uxItemSize = uxItemSize;  /*  */
     ( void ) xQueueGenericReset( pxNewQueue, pdTRUE );
 
     #if ( configUSE_TRACE_FACILITY == 1 )
@@ -831,7 +831,7 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength,
 
 #endif /* ( ( configUSE_COUNTING_SEMAPHORES == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) ) */
 /*-----------------------------------------------------------*/
-
+/* TODO:  */
 BaseType_t xQueueGenericSend( QueueHandle_t xQueue,
                               const void * const pvItemToQueue,
                               TickType_t xTicksToWait,
@@ -840,7 +840,7 @@ BaseType_t xQueueGenericSend( QueueHandle_t xQueue,
     BaseType_t xEntryTimeSet = pdFALSE, xYieldRequired;
     TimeOut_t xTimeOut;
     Queue_t * const pxQueue = xQueue;
-
+    /* 检查传入参数 */
     configASSERT( pxQueue );
     configASSERT( !( ( pvItemToQueue == NULL ) && ( pxQueue->uxItemSize != ( UBaseType_t ) 0U ) ) );
     configASSERT( !( ( xCopyPosition == queueOVERWRITE ) && ( pxQueue->uxLength != 1 ) ) );
@@ -1439,7 +1439,7 @@ BaseType_t xQueueReceive( QueueHandle_t xQueue,
             }
             else
             {
-                if( xTicksToWait == ( TickType_t ) 0 )
+                if( xTicksToWait == ( TickType_t ) 0 ) /* 非阻塞 不等待直接返回 */
                 {
                     /* The queue was empty and no block time is specified (or
                      * the block time has expired) so leave now. */

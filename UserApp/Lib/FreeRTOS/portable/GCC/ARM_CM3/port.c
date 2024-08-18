@@ -110,7 +110,7 @@
 /*
  * Setup the timer to generate the tick interrupts.  The implementation in this
  * file is weak to allow application writers to change the timer used to
- * generate the tick interrupt.
+ * generate the tick interrupt. 设置Tick定时器中断
  */
 void vPortSetupTimerInterrupt( void );
 
@@ -264,7 +264,7 @@ static void prvPortStartFirstTask( void )
         " cpsie f				\n"
         " dsb					\n"
         " isb					\n"
-        " svc 0					\n"/* System call to start first task. */
+        " svc 0					\n"/* System call to start first task. 触发系统调用中断  */
         " nop					\n"
         " .ltorg				\n"
         );
@@ -349,13 +349,13 @@ BaseType_t xPortStartScheduler( void )
 
     /* Start the timer that generates the tick ISR.  Interrupts are disabled
      * here already. */
-    vPortSetupTimerInterrupt();
+    vPortSetupTimerInterrupt(); /* 设定 定时器中断 */
 
     /* Initialise the critical nesting count ready for the first task. */
     uxCriticalNesting = 0;
 
     /* Start the first task. */
-    prvPortStartFirstTask();
+    prvPortStartFirstTask(); /* 开始第一个任务 */
 
     /* Should never get here as the tasks will now be executing!  Call the task
      * exit error function to prevent compiler warnings about a static function
@@ -451,17 +451,17 @@ void xPortSysTickHandler( void )
      * executes all interrupts must be unmasked.  There is therefore no need to
      * save and then restore the interrupt mask value as its value is already
      * known. */
-    portDISABLE_INTERRUPTS();
+    portDISABLE_INTERRUPTS(); /* 关中断 */
     {
         /* Increment the RTOS tick. */
         if( xTaskIncrementTick() != pdFALSE )
         {
             /* A context switch is required.  Context switching is performed in
              * the PendSV interrupt.  Pend the PendSV interrupt. */
-            portNVIC_INT_CTRL_REG = portNVIC_PENDSVSET_BIT;
+            portNVIC_INT_CTRL_REG = portNVIC_PENDSVSET_BIT; /* 挂起 PendSV 中断， 将会跳转到 xPortPendSVHandler */
         }
     }
-    portENABLE_INTERRUPTS();
+    portENABLE_INTERRUPTS(); /* 开中断 */
 }
 /*-----------------------------------------------------------*/
 
@@ -688,7 +688,7 @@ void xPortSysTickHandler( void )
 
 /*
  * Setup the systick timer to generate the tick interrupts at the required
- * frequency.
+ * frequency. 设置Tick定时器中断
  */
 __attribute__( ( weak ) ) void vPortSetupTimerInterrupt( void )
 {

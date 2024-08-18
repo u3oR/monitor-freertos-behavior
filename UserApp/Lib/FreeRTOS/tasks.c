@@ -2028,7 +2028,7 @@ void vTaskStartScheduler( void )
     {
         if( xReturn == pdPASS )
         {
-            xReturn = xTimerCreateTimerTask();
+            xReturn = xTimerCreateTimerTask(); /* 创建定时器任务 */
         }
         else
         {

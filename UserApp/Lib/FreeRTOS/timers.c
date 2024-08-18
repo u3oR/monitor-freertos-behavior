@@ -140,7 +140,7 @@
     PRIVILEGED_DATA static List_t * pxOverflowTimerList;
 
 /* A queue that is used to send commands to the timer service task. */
-    PRIVILEGED_DATA static QueueHandle_t xTimerQueue = NULL;
+    PRIVILEGED_DATA static QueueHandle_t xTimerQueue = NULL; /* 向定时器服务任务发送命令的队列 */
     PRIVILEGED_DATA static TaskHandle_t xTimerTaskHandle = NULL;
 
 /*lint -restore */
